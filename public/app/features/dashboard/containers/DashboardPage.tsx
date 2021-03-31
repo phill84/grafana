@@ -67,6 +67,7 @@ export interface State {
   updateScrollTop?: number;
   rememberScrollTop: number;
   showLoadingState: boolean;
+  isUpdateCheckerSet: boolean;
 }
 
 export class DashboardPage extends PureComponent<Props, State> {
@@ -76,6 +77,7 @@ export class DashboardPage extends PureComponent<Props, State> {
     showLoadingState: false,
     scrollTop: 0,
     rememberScrollTop: 0,
+    isUpdateCheckerSet: false,
   };
 
   async componentDidMount() {
@@ -88,6 +90,31 @@ export class DashboardPage extends PureComponent<Props, State> {
       urlFolderId: this.props.urlFolderId,
       routeInfo: this.props.routeInfo,
       fixUrl: true,
+    });
+    if (!this.state.isUpdateCheckerSet) {
+      setInterval(this.checkForUpdate.bind(this), 60000);
+      this.setState({ isUpdateCheckerSet: true });
+    }
+  }
+
+  checkForUpdate() {
+    const { dashboard, editview, isPanelEditorOpen } = this.props;
+    const changeTracker = dashboardWatcher.getChangeTracker();
+    if (editview || isPanelEditorOpen || changeTracker.hasChanges()) {
+      console.log('dashboard is being edited or has unsaved changes');
+      return;
+    }
+
+    const historySrv = dashboardWatcher.getVersionHistorySrv();
+    const options = { limit: 1, start: 0 }; // only fetching the most recent version
+    historySrv.getHistoryList(dashboard, options).then((res: any) => {
+      if (res && res.length === 1) {
+        const { dashboardId, version } = res[0];
+        if (dashboardId === dashboard?.id && version !== dashboard?.version) {
+          console.log('dashboard has been updated, refreshing');
+          window.location.reload();
+        }
+      }
     });
   }
 

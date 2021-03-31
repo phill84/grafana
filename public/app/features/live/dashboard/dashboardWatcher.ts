@@ -89,6 +89,14 @@ class DashboardWatcher {
     return this.lastEditing;
   }
 
+  getChangeTracker() {
+    return getLegacyAngularInjector().get<any>('unsavedChangesSrv').tracker;
+  }
+
+  getVersionHistorySrv() {
+    return getLegacyAngularInjector().get<any>('historySrv');
+  }
+
   observer = {
     next: (event: LiveChannelEvent<DashboardEvent>) => {
       // Send the editing state when connection starts
