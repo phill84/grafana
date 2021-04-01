@@ -33,6 +33,7 @@ import { SubMenu } from '../components/SubMenu/SubMenu';
 import { cleanUpDashboardAndVariables } from '../state/actions';
 import { cancelVariables } from '../../variables/state/actions';
 import { dashboardWatcher } from 'app/features/live/dashboard/dashboardWatcher';
+import { DEFAULT_CHECK_UPDATE_INTERVAL } from '../state/DashboardModel';
 
 export interface Props {
   urlUid?: string;
@@ -67,7 +68,7 @@ export interface State {
   updateScrollTop?: number;
   rememberScrollTop: number;
   showLoadingState: boolean;
-  isUpdateCheckerSet: boolean;
+  isUpdateCheckerStarted: boolean;
 }
 
 export class DashboardPage extends PureComponent<Props, State> {
@@ -77,7 +78,7 @@ export class DashboardPage extends PureComponent<Props, State> {
     showLoadingState: false,
     scrollTop: 0,
     rememberScrollTop: 0,
-    isUpdateCheckerSet: false,
+    isUpdateCheckerStarted: false,
   };
 
   async componentDidMount() {
@@ -91,10 +92,6 @@ export class DashboardPage extends PureComponent<Props, State> {
       routeInfo: this.props.routeInfo,
       fixUrl: true,
     });
-    if (!this.state.isUpdateCheckerSet) {
-      setInterval(this.checkForUpdate.bind(this), 60000);
-      this.setState({ isUpdateCheckerSet: true });
-    }
   }
 
   checkForUpdate() {
@@ -125,10 +122,17 @@ export class DashboardPage extends PureComponent<Props, State> {
 
   componentDidUpdate(prevProps: Props) {
     const { dashboard, urlEditPanelId, urlViewPanelId, urlUid } = this.props;
-    const { editPanel, viewPanel } = this.state;
+    const { editPanel, viewPanel, isUpdateCheckerStarted } = this.state;
 
     if (!dashboard) {
       return;
+    }
+
+    if (dashboard.autoReload && !isUpdateCheckerStarted) {
+      const intervalSeconds = dashboard.checkUpdateInterval || DEFAULT_CHECK_UPDATE_INTERVAL;
+      console.log(`start dashboard update checker timer with ${intervalSeconds} seconds interval`);
+      setInterval(this.checkForUpdate.bind(this), intervalSeconds * 1000);
+      this.setState({ isUpdateCheckerStarted: true });
     }
 
     // if we just got dashboard update title

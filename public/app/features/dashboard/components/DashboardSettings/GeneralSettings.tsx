@@ -3,9 +3,14 @@ import { SelectableValue, TimeZone } from '@grafana/data';
 import { Select, TagsInput, Input, Field, CollapsableSection, RadioButtonGroup } from '@grafana/ui';
 import { selectors } from '@grafana/e2e-selectors';
 import { FolderPicker } from 'app/core/components/Select/FolderPicker';
-import { DashboardModel } from '../../state/DashboardModel';
+import {
+  DashboardModel,
+  DEFAULT_CHECK_UPDATE_INTERVAL,
+  MINIMUM_CHECK_UPDATE_INTERVAL,
+} from '../../state/DashboardModel';
 import { DeleteDashboardButton } from '../DeleteDashboard/DeleteDashboardButton';
 import { TimePickerSettings } from './TimePickerSettings';
+import { toInteger } from 'lodash';
 
 interface Props {
   dashboard: DashboardModel;
@@ -68,6 +73,24 @@ export const GeneralSettings: React.FC<Props> = ({ dashboard }) => {
     { label: 'Read-only', value: false },
   ];
 
+  const onAutoReloadChange = (value: boolean) => {
+    dashboard.autoReload = value;
+    setRenderCounter(renderCounter + 1);
+  };
+
+  const autoReloadOptions = [
+    { label: 'Enabled', value: true },
+    { label: 'Disabled', value: false },
+  ];
+
+  const onCheckUpdateIntervalChange = (event: React.FormEvent<HTMLInputElement>) => {
+    const value = toInteger(event.currentTarget.value);
+    if (value && value >= MINIMUM_CHECK_UPDATE_INTERVAL) {
+      dashboard.checkUpdateInterval = toInteger(value);
+      setRenderCounter(renderCounter + 1);
+    }
+  };
+
   return (
     <div style={{ maxWidth: '600px' }}>
       <h3 className="dashboard-settings__header" aria-label={selectors.pages.Dashboard.Settings.General.title}>
@@ -92,13 +115,29 @@ export const GeneralSettings: React.FC<Props> = ({ dashboard }) => {
             dashboardId={dashboard.id}
           />
         </Field>
-
         <Field
           label="Editable"
           description="Set to read-only to disable all editing. Reload the dashboard for changes to take effect"
         >
           <RadioButtonGroup value={dashboard.editable} options={editableOptions} onChange={onEditableChange} />
         </Field>
+        <Field label="Auto reload" description="Reload page when dashboard is changed on the server side">
+          <RadioButtonGroup value={dashboard.autoReload} options={autoReloadOptions} onChange={onAutoReloadChange} />
+        </Field>
+        {dashboard.autoReload && (
+          <Field
+            label="Check update interval"
+            description={`Number of seconds between polling for dashboard updates, minimum ${MINIMUM_CHECK_UPDATE_INTERVAL} seconds`}
+          >
+            <Input
+              name="checkUpdateInterval"
+              type="number"
+              defaultValue={dashboard.checkUpdateInterval}
+              placeholder={DEFAULT_CHECK_UPDATE_INTERVAL.toString()}
+              onChange={onCheckUpdateIntervalChange}
+            />
+          </Field>
+        )}
       </div>
 
       <TimePickerSettings

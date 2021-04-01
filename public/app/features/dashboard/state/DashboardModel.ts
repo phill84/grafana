@@ -50,6 +50,9 @@ export interface DashboardLink {
   includeVars: boolean;
 }
 
+export const DEFAULT_CHECK_UPDATE_INTERVAL = 60;
+export const MINIMUM_CHECK_UPDATE_INTERVAL = 10;
+
 export class DashboardModel {
   id: any;
   uid: string;
@@ -77,6 +80,9 @@ export class DashboardModel {
   panels: PanelModel[];
   panelInEdit?: PanelModel;
   panelInView?: PanelModel;
+
+  autoReload: boolean;
+  checkUpdateInterval: number;
 
   // ------------------
   // not persisted
@@ -130,6 +136,9 @@ export class DashboardModel {
     this.gnetId = data.gnetId || null;
     this.panels = _.map(data.panels || [], (panelData: any) => new PanelModel(panelData));
     this.formatDate = this.formatDate.bind(this);
+
+    this.autoReload = data.autoReload || false;
+    this.checkUpdateInterval = data.checkUpdateInterval || null;
 
     this.resetOriginalVariables(true);
     this.resetOriginalTime();
